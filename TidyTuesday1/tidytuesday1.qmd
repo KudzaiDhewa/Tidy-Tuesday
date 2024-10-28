@@ -1,0 +1,105 @@
+---
+title: "TidyTuesday"
+format: html
+editor: visual
+author: Kudzai Dhewa
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(sf)
+library(viridis) 
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+
+cia_factbook <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-10-22/cia_factbook.csv')
+
+
+worldmap <- st_read("../TidyTuesday/world-administrative-boundaries/world-administrative-boundaries.shp")
+```
+
+```{r}
+st_crs(worldmap)
+
+```
+
+You can add options to executable code like this
+
+```{r}
+
+cia_factbook <- cia_factbook %>%
+  mutate(users_per_km = internet_users %/% area)
+
+worldmap <- worldmap%>%
+  mutate(country = name)
+
+worldmap
+
+worldmap <- worldmap %>%
+  mutate (country = recode (country,
+                            "Democratic Republic of the Congo" = "Congo, Democratic Republic of the",
+                          
+   "United Republic of Tanzania"  = "Tanzania",
+                            "Congo" = "Congo, Republic of the",
+                            "Côte d'Ivoire" = "Cote d'Ivoire",
+                            "Gambia" = "Gambia, The",
+                            "Cape Verde" = "Cabo Verde"
+                            
+   
+                    
+  ) )
+
+cia_factbook <- cia_factbook %>%
+  mutate ( country = recode(country, "Libya" = "Libyan Arab Jamahiriya" ))
+
+### join data sets
+cia_world <- left_join(cia_factbook, worldmap, by = "country" )
+
+cia_world <- st_as_sf(cia_world)
+st_crs(cia_world)
+
+```
+
+```{r}
+
+cia_Africa <- cia_world %>%
+  filter (continent == "Africa")
+
+st_crs(cia_Africa)
+  
+ggplot(cia_Africa) +
+  geom_sf(aes(fill = life_exp_at_birth), color = "black", size = 0.1) + 
+  scale_fill_viridis_c(name = "Life Expectancy", option = "viridis") + 
+  theme_classic() +
+  labs(title = "Life Expectancy at Birth in Africa") +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.title = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "bottom",  
+    legend.key.width = unit(2, "cm")  
+  )
+
+
+  
+  
+```
+
+```{r}
+summary(cia_Africa$users_per_km)
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
