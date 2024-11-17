@@ -1,0 +1,93 @@
+---
+title: "tidytuesday3"
+format: html
+editor: visual
+author: Kudzai
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+
+library(ISOcodes)
+library(tidyverse)
+library(janitor)
+library(dplyr)
+library(tidytuesdayR)
+```
+
+```{r}
+# Option 1: tidytuesdayR package 
+## install.packages("tidytuesdayR")
+
+tuesdata <- tidytuesdayR::tt_load('2024-11-12')
+## OR
+tuesdata <- tidytuesdayR::tt_load(2024, week = 46)
+
+countries <- tuesdata$countries
+country_subdivisions <- tuesdata$country_subdivisions
+former_countries <- tuesdata$former_countries
+
+# Option 2: Read directly from GitHub
+
+countries <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-11-12/countries.csv')
+country_subdivisions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-11-12/country_subdivisions.csv')
+former_countries <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2024/2024-11-12/former_countries.csv')
+```
+
+You can add options to executable code like this
+
+```{r}
+
+countries <- 
+  ISOcodes::ISO_3166_1 |> 
+  tibble::as_tibble() |> 
+  dplyr::mutate(Numeric = as.integer(Numeric)) |> 
+  janitor::clean_names()
+country_subdivisions <- 
+  ISOcodes::ISO_3166_2 |> 
+  tibble::as_tibble() |> 
+  janitor::clean_names() |> 
+  dplyr::mutate(
+    alpha_2 = stringr::str_extract(code, "^[^-]+(?=-)")
+  )
+former_countries <-
+  ISOcodes::ISO_3166_3 |> 
+  tibble::as_tibble() |> 
+  janitor::clean_names()
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+
+result <- country_subdivisions %>%
+  group_by(alpha_2) %>%
+  summarise(
+    total_rows = n(), 
+    most_popular_type = type %>% 
+      table() %>% 
+      which.max() %>% 
+      names(),
+    .groups = "drop"
+  ) %>%
+  filter(total_rows > 25)
+
+country_division <- result%>%
+  left_join(countries)
+
+print(country_division)
+
+
+```
+
+```{r, fig.width=10, fig.height=7, fig.align='center'}
+ggplot(data =country_division) + geom_point(aes(x= total_rows, y = name, color= most_popular_type, size = total_rows )) + theme_minimal() + labs( x= "Number of  subdivisions", y = " ", title = "Country Subdivision Counts", subtitle = "Predominant Type in each country highlighted. Only countries with more than 25 subdivisions shown.", color = "Type") + guides(size = "none")
+ggsave(filename = "country_division_plot.jpeg", width = 10, height = 8) 
+```
