@@ -1,0 +1,47 @@
+---
+title: "TidyTuesday3"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+##
+library(tidyverse)
+library(scales)
+library(viridis)
+
+#read in data
+df <- read.csv("journalism.csv")
+
+
+```
+
+You can add options to executable code like this
+
+```{r}
+#random color generator
+
+random_colors <- hue_pal()(10)
+
+df %>%
+  filter(rank == "Winner")%>%
+  group_by(name)%>%
+  summarise(total = n()) %>%
+  filter(total > 3) %>%
+  
+  
+  ggplot(aes(x=total,y=name)) + geom_bar(stat = "identity") +
+theme_minimal() + labs(y = "Journalist", x = "Number of wins", title = "Who has the most James Beard Awards for Journalism?", subtitle = "Only including journalists with more than 3 awards" ) + scale_fill_manual(values = random_colors) 
+
+  
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
